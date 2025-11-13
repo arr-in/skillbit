@@ -1,12 +1,21 @@
 import express  from "express";
 import { ENV } from "./lib/env.js";
+import path from "path"
 
-console.log(ENV.PORT);
-console.log(ENV.DB_URL);
 const app = express();
-console.log(process.env.PORT);
+
+const __dirname = path.resolve();
+
 app.get("/health", (req,res) => {
     res.status(200).json({msg:"success from api"})
 });
 
-app.listen(2000,()=>console.log("backend is running on port", ENV.PORT));
+if(ENV.NODE_ENV === "production"){
+    app.use(express.static(path.join(__dirname,"../frontend/dist")))
+
+    app.get("/{any}", (req,res) =>{
+        res.sendFile(path.join(__dirname,"../frontend", "dist" , "index.html"));
+    })
+}
+
+app.listen(ENV.PORT,()=>console.log("backend is running on port", ENV.PORT));

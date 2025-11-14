@@ -1,21 +1,35 @@
-import express  from "express";
+import express from "express";
 import { ENV } from "./lib/env.js";
-import path from "path"
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 
-const __dirname = path.resolve();
+// Get __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.get("/health", (req,res) => {
-    res.status(200).json({msg:"success from api"})
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+    res.status(200).json({ msg: "success from api" });
 });
 
-if(ENV.NODE_ENV === "production"){
-    app.use(express.static(path.join(__dirname,"../frontend/dist")))
+// Serve static files and handle client-side routing in production
+if (ENV.NODE_ENV === "production") {
+    const frontendPath = path.join(__dirname, "../../frontend/dist");
+    
+    app.use(express.static(frontendPath));
 
-    app.get("/{any}", (req,res) =>{
-        res.sendFile(path.join(__dirname,"../frontend", "dist" , "index.html"));
-    })
+    // Handle all other routes - send index.html for client-side routing
+    app.get("*", (req, res) => {
+        res.sendFile(path.join(frontendPath, "index.html"));
+    });
 }
 
-app.listen(ENV.PORT,()=>console.log("backend is running on port", ENV.PORT));
+app.listen(ENV.PORT, () => 
+    console.log(`Backend is running on port ${ENV.PORT}`)
+);
